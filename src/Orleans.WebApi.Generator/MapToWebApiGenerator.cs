@@ -1,12 +1,8 @@
 ﻿
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Orleans.WebApi.Generator.Metas;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Orleans.WebApi.Generator;
 [Generator]
@@ -106,13 +102,21 @@ public class MapToWebApiGenerator : ISourceGenerator
 
                             foreach (var method in members.OfType<IMethodSymbol>())
                             {
-                                var returnValue = method.ReturnType.BuildType(ref namespaces);
                                 var methodMeta = new MethodMetaInfo
                                 {
                                     Symbol = method,
-                                    Name = method.Name,
-                                    Return = returnValue
+                                    Name = method.Name
                                 };
+                                if (method.ReturnType.TryParseHttpResult(out var returnType))
+                                {
+                                    methodMeta.IsHttpResult = true;
+                                    methodMeta.Return = returnType.BuildType(ref namespaces);
+                                }
+                                else
+                                {
+                                    var returnValue = method.ReturnType.BuildType(ref namespaces);
+                                    methodMeta.Return = returnValue;
+                                }
 
                                 foreach (var parameter in method.Parameters)
                                 {
@@ -212,7 +216,16 @@ public class MapToWebApiGenerator : ISourceGenerator
                                     }
                                 }
                                 sourcebuilder.WriteAttributes(method.Attributes, true);
-                                sourcebuilder.Write($"public {method.Return} {method.Name}([FromRoute]{primaryKeyType} grainId");
+
+                                if (method.IsHttpResult)
+                                {
+                                    sourcebuilder.Write($"[ProducesResponseType(typeof({method.Return}),200)]");
+                                    sourcebuilder.Write($"public async Task<IActionResult> {method.Name}([FromRoute]{primaryKeyType} grainId");
+                                }
+                                else
+                                {
+                                    sourcebuilder.Write($"public {method.Return} {method.Name}([FromRoute]{primaryKeyType} grainId");
+                                }
 
                                 if (isCompoundPrimaryKey)
                                 {
@@ -243,26 +256,54 @@ public class MapToWebApiGenerator : ISourceGenerator
 
                                 sourcebuilder.WriteOpeningBracket();
 
-                                if (!string.IsNullOrEmpty(grainClassNamePrefix))
+                                if (method.IsHttpResult)
                                 {
-                                    if (isCompoundPrimaryKey)
+                                    if (!string.IsNullOrEmpty(grainClassNamePrefix))
                                     {
-                                        sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, keyExt, \"{grainClassNamePrefix}\").{ method.Name} (");
+                                        if (isCompoundPrimaryKey)
+                                        {
+                                            sourcebuilder.Write($"var result = await this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, keyExt, \"{grainClassNamePrefix}\").{ method.Name} (");
+                                        }
+                                        else
+                                        {
+                                            sourcebuilder.Write($"var result = await this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, \"{grainClassNamePrefix}\").{ method.Name} (");
+                                        }
                                     }
                                     else
                                     {
-                                        sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, \"{grainClassNamePrefix}\").{ method.Name} (");
+                                        if (isCompoundPrimaryKey)
+                                        {
+                                            sourcebuilder.Write($"var result = await this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, keyExt, null).{method.Name}(");
+                                        }
+                                        else
+                                        {
+                                            sourcebuilder.Write($"var result = await this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId).{method.Name}(");
+                                        }
                                     }
                                 }
                                 else
                                 {
-                                    if (isCompoundPrimaryKey)
+                                    if (!string.IsNullOrEmpty(grainClassNamePrefix))
                                     {
-                                        sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, keyExt, null).{method.Name}(");
+                                        if (isCompoundPrimaryKey)
+                                        {
+                                            sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, keyExt, \"{grainClassNamePrefix}\").{ method.Name} (");
+                                        }
+                                        else
+                                        {
+                                            sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, \"{grainClassNamePrefix}\").{ method.Name} (");
+                                        }
                                     }
                                     else
                                     {
-                                        sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId).{method.Name}(");
+                                        if (isCompoundPrimaryKey)
+                                        {
+                                            sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId, keyExt, null).{method.Name}(");
+                                        }
+                                        else
+                                        {
+                                            sourcebuilder.Write($"return this.clusterFactory.GetCluster<{attributeInterfaceType.Name}, {primaryKeyType}>(grainId).GetGrain<{attributeInterfaceType.Name}>(grainId).{method.Name}(");
+                                        }
                                     }
                                 }
 
@@ -276,6 +317,23 @@ public class MapToWebApiGenerator : ISourceGenerator
                                     sourcebuilder.Write($"{para.Name}");
                                 }
                                 sourcebuilder.Write(");");
+
+                                if (method.IsHttpResult)
+                                {
+                                    sourcebuilder.Write("if (result.ResponseHeaders != default && result.ResponseHeaders.Count > 0)");
+
+                                    sourcebuilder.WriteOpeningBracket();
+                                    sourcebuilder.Write("foreach (var head in result.ResponseHeaders)");
+
+                                    sourcebuilder.WriteOpeningBracket();
+                                    sourcebuilder.Write("this.Response.Headers[head.Key] = head.Value;");
+                                    sourcebuilder.WriteClosingBracket();
+
+                                    sourcebuilder.WriteClosingBracket();
+
+                                    sourcebuilder.Write("return StatusCode((int)result.StatusCode, result.Body);");
+                                }
+
                                 sourcebuilder.WriteLine();
                                 sourcebuilder.WriteClosingBracket();
                             }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Orleans;
+using Orleans.WebApi.Abstractions;
 using Sample.IGrains.Models;
 using RouteAttribute = Orleans.WebApi.Abstractions.RouteAttribute;
 
@@ -8,7 +9,7 @@ namespace Sample.IGrains
     /// <summary>
     /// 转换为Controller测试
     /// </summary>
-    [Route("{grainid}/{keyext}/[controller]")]
+    [Route("{grainId}/{keyext}/[controller]")]
     public interface IHelloGrain : IGrainWithIntegerCompoundKey
     {
         /// <summary>
@@ -35,7 +36,15 @@ namespace Sample.IGrains
         /// </summary>
         /// <param name="greeting"></param>
         /// <returns></returns>
-        [HttpPost]
+        [HttpPost("/{grainid}/{keyext}/HelloPost")]
         Task<User> SayHello([FromBody] Greet greeting);
+
+        /// <summary>
+        /// 测试httpresult
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        [HttpGet("httpresult")]
+        Task<HttpResult<User>> Get([FromQuery]int code);
     }
 }

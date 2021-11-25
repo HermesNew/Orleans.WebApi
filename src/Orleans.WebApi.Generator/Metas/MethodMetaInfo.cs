@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using System.Collections.Generic;
 
 namespace Orleans.WebApi.Generator.Metas
 {
@@ -8,6 +7,8 @@ namespace Orleans.WebApi.Generator.Metas
         public IMethodSymbol Symbol { get; set; }
 
         public string Name { get; set; }
+
+        public bool IsHttpResult { get; set; }
 
         public string Return { get; set; }
 

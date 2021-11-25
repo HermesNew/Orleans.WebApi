@@ -1,9 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Orleans.WebApi.Generator.Metas;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Orleans.WebApi.Generator
 {
@@ -110,6 +107,33 @@ namespace Orleans.WebApi.Generator
             var nameSpace = parent as FileScopedNamespaceDeclarationSyntax;
             var result = nameSpace?.Name.ToFullString();
             return result;
+        }
+
+        public static bool TryParseHttpResult(this ITypeSymbol typeSymbol, out ITypeSymbol bodyType)
+        {
+            if (typeSymbol is not INamedTypeSymbol namedType)
+            {
+                namedType = typeSymbol.ContainingType;
+            }
+
+            if (namedType.IsGenericType && namedType.BaseType.Name == "Task")
+            {
+                var objType = namedType.TypeArguments[0];
+                if (objType is not INamedTypeSymbol objNamedType)
+                {
+                    objNamedType = objType.ContainingType;
+                }
+
+                if (objNamedType.IsGenericType && objNamedType.Name == "HttpResult")
+                {
+                    bodyType = objNamedType.TypeArguments[0];
+                    return true;
+                }
+            }
+
+            bodyType = default;
+
+            return false;
         }
 
         public static string BuildType(this ITypeSymbol typeSymbol, ref List<string> namespaces)

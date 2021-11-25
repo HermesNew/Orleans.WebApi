@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Orleans.WebApi.Abstractions
+﻿namespace Orleans.WebApi.Abstractions
 {
 
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
