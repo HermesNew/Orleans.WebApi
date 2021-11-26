@@ -41,20 +41,17 @@ public class MapToWebApiGenerator : ISourceGenerator
                     {
                         if (attribute.ConstructorArguments.First().Value is INamedTypeSymbol attributeInterfaceType)
                         {
-                            XmlReaderProvider xmlProvider = default;
+                            XmlReaderProvider? xmlProvider = default;
                             var metadataReference = context.Compilation.GetMetadataReference(attributeInterfaceType.ContainingAssembly);
                             if (metadataReference is not null)
                             {
                                 var propInfo = metadataReference.GetType().GetProperty("FilePath");
-                                var path = propInfo?.GetValue(metadataReference)?.ToString()?.Replace("\\ref\\", "/").Replace(".dll", ".xml");
+                                var path = propInfo?.GetValue(metadataReference)?.ToString()?.Replace("\\ref\\", "\\").Replace(".dll", ".xml");
 
-                                if (!string.IsNullOrEmpty(path))
+                                if (!string.IsNullOrEmpty(path) && !xmlProviderDict.TryGetValue(path!, out xmlProvider))
                                 {
-                                    if (!xmlProviderDict.TryGetValue(path, out xmlProvider))
-                                    {
-                                        xmlProvider = new XmlReaderProvider(path);
-                                        xmlProviderDict.Add(path, xmlProvider);
-                                    }
+                                    xmlProvider = new XmlReaderProvider(path!);
+                                    xmlProviderDict.Add(path!, xmlProvider);
                                 }
                             }
                             var primaryKeyType = "string";
@@ -110,7 +107,7 @@ public class MapToWebApiGenerator : ISourceGenerator
                                 if (method.ReturnType.TryParseHttpResult(out var returnType))
                                 {
                                     methodMeta.IsHttpResult = true;
-                                    methodMeta.Return = returnType.BuildType(ref namespaces);
+                                    methodMeta.Return = returnType?.BuildType(ref namespaces);
                                 }
                                 else
                                 {

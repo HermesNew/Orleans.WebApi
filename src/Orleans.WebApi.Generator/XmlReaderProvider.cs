@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Linq;
 
 namespace Orleans.WebApi.Generator
@@ -13,10 +10,9 @@ namespace Orleans.WebApi.Generator
         {
             DtdProcessing = DtdProcessing.Prohibit,
         };
-        private Dictionary<string, string> _docComments;
+        private Dictionary<string, string>? _docComments;
 
         public XmlReaderProvider(string filePath)
-
         {
             _filePath = filePath;
         }

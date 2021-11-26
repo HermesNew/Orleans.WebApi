@@ -6,7 +6,7 @@ namespace Orleans.WebApi.Generator
 {
     public static class Extensions
     {
-        public static (string controllerName, string grainClassNamePrefix) GetProps(this AttributeData attribute)
+        public static (string? controllerName, string? grainClassNamePrefix) GetProps(this AttributeData attribute)
         {
             var list = attribute.ConstructorArguments.ToArray();
             return (list[2].Value as string, list[1].Value as string);
@@ -19,17 +19,14 @@ namespace Orleans.WebApi.Generator
                 throw new ArgumentNullException(nameof(attribute.AttributeClass));
             }
 
-            var attributeMeta = new AttributeMetaInfo
+            var attributeMeta = new AttributeMetaInfo(GetNamespace(attribute.AttributeClass.ContainingNamespace), attribute.AttributeClass.Name)
             {
-                Name = attribute.AttributeClass.Name,
-                Namespace = GetNamespace(attribute.AttributeClass.ContainingNamespace)
+                IsAspNetCoreAttribute = attribute.AttributeClass.GetAttributes().Any(o => o.AttributeClass != default && o.AttributeClass.Name == "AspNetCoreAttribute")
             };
-
-            attributeMeta.IsAspNetCoreAttribute = attribute.AttributeClass.GetAttributes().Any(o => o.AttributeClass != default && o.AttributeClass.Name == "AspNetCoreAttribute");
 
             foreach (var cArgument in attribute.ConstructorArguments)
             {
-                if (cArgument.Type.Name == nameof(Type))
+                if (cArgument.Type?.Name == nameof(Type))
                 {
                     attributeMeta.ConstructorArguments.Add($"typeof({cArgument.Value})");
                     continue;
@@ -51,13 +48,13 @@ namespace Orleans.WebApi.Generator
 
             foreach (var nArgument in attribute.NamedArguments)
             {
-                if (nArgument.Value.Type.Name == nameof(Type))
+                if (nArgument.Value.Type?.Name == nameof(Type))
                 {
                     attributeMeta.NamedArguments.Add($"{nArgument.Key} = typeof({nArgument.Value.Value})");
                     continue;
                 }
 
-                 if (nArgument.Value.Value is string)
+                if (nArgument.Value.Value is string)
                 {
                     attributeMeta.NamedArguments.Add($"{nArgument.Key} = \"{nArgument.Value.Value}\"");
                 }
@@ -109,11 +106,11 @@ namespace Orleans.WebApi.Generator
             || attribute.Name.Contains("Swagger");
 
         public static bool IsParameterAttribute(this AttributeMetaInfo attribute) =>
-            attribute.Namespace.StartsWith("Microsoft.AspNetCore")
+             attribute.Namespace.StartsWith("Microsoft.AspNetCore")
             || attribute.IsAspNetCoreAttribute
             || attribute.Namespace.Contains("AspNetCore");
 
-        public static string GetNamespace(this TypeDeclarationSyntax source)
+        public static string? GetNamespace(this TypeDeclarationSyntax source)
         {
             var parent = source.Parent;
             var nameSpace = parent as FileScopedNamespaceDeclarationSyntax;
@@ -121,14 +118,14 @@ namespace Orleans.WebApi.Generator
             return result;
         }
 
-        public static bool TryParseHttpResult(this ITypeSymbol typeSymbol, out ITypeSymbol bodyType)
+        public static bool TryParseHttpResult(this ITypeSymbol typeSymbol, out ITypeSymbol? bodyType)
         {
             if (typeSymbol is not INamedTypeSymbol namedType)
             {
                 namedType = typeSymbol.ContainingType;
             }
 
-            if (namedType.IsGenericType && namedType.BaseType.Name == "Task")
+            if (namedType.IsGenericType && namedType.BaseType?.Name == "Task")
             {
                 var objType = namedType.TypeArguments[0];
                 if (objType is not INamedTypeSymbol objNamedType)
@@ -138,7 +135,7 @@ namespace Orleans.WebApi.Generator
 
                 if (!objNamedType.IsGenericType && objNamedType.Name == "HttpResult")
                 {
-                    bodyType = objNamedType.BaseType.TypeArguments[0];
+                    bodyType = objNamedType.BaseType?.TypeArguments.First();
                     return true;
                 }
 
@@ -194,7 +191,7 @@ namespace Orleans.WebApi.Generator
             }
         }
 
-        public static string GetDefaultValue(this IParameterSymbol parameter)
+        public static string? GetDefaultValue(this IParameterSymbol parameter)
         {
             if (parameter.HasExplicitDefaultValue && parameter.ExplicitDefaultValue != default)
             {

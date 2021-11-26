@@ -15,15 +15,15 @@ internal class SyntaxReceiver : ISyntaxReceiver
         {
             var hasAttributeSyntax = classAttributes
                 .SelectMany(a => a.Attributes)
-                .Where(a => a.Name is
-                    IdentifierNameSyntax { Identifier: { ValueText: "MapToWebApi" } }
+                .Any(a => a.Name is
+                    IdentifierNameSyntax { Identifier.ValueText: "MapToWebApi" }
                     or
                     QualifiedNameSyntax
                     {
-                        Left: IdentifierNameSyntax { Identifier: { ValueText: "Orleans.WebApi.Abstractions" } },
-                        Right: IdentifierNameSyntax { Identifier: { ValueText: "MapToWebApi" } }
+                        Left: IdentifierNameSyntax { Identifier.ValueText: "Orleans.WebApi.Abstractions" },
+                        Right: IdentifierNameSyntax { Identifier.ValueText: "MapToWebApi" }
                     }
-                ).Any();
+                 );
 
             if (hasAttributeSyntax)
             {

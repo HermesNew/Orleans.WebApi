@@ -1,9 +1,13 @@
-﻿using System.Collections.Generic;
-
-namespace Orleans.WebApi.Generator.Metas
+﻿namespace Orleans.WebApi.Generator.Metas
 {
     public record AttributeMetaInfo
     {
+        public AttributeMetaInfo(string nspace, string name)
+        {
+            this.Namespace = nspace;
+            this.Name = name;
+        }
+
         public string Namespace { get; set; }
 
         public string Name { get; set; }
