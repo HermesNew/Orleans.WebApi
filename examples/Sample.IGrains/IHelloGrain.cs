@@ -44,7 +44,8 @@ namespace Sample.IGrains
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
+        [ProducesResponseType(typeof(User),200)]
         [HttpGet("httpresult")]
-        Task<HttpResult<User>> Get([FromQuery]int code);
+        Task<HttpResult> Get([FromQuery]int code);
     }
 }

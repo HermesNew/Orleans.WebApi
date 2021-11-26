@@ -5,7 +5,8 @@ using Orleans.Hosting;
 using Sample.Grains;
 
 using var host = new HostBuilder()
-    .UseOrleans(builder => {
+    .UseOrleans(builder =>
+    {
         builder.UseLocalhostClustering();
         builder.AddIncomingGrainCallFilter<LoggingCallFilter>();
     })

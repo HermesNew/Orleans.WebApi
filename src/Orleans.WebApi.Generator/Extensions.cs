@@ -29,6 +29,12 @@ namespace Orleans.WebApi.Generator
 
             foreach (var cArgument in attribute.ConstructorArguments)
             {
+                if (cArgument.Type.Name == nameof(Type))
+                {
+                    attributeMeta.ConstructorArguments.Add($"typeof({cArgument.Value})");
+                    continue;
+                }
+
                 if (cArgument.Value is string)
                 {
                     attributeMeta.ConstructorArguments.Add($"\"{cArgument.Value}\"");
@@ -45,7 +51,13 @@ namespace Orleans.WebApi.Generator
 
             foreach (var nArgument in attribute.NamedArguments)
             {
-                if (nArgument.Value.Value is string)
+                if (nArgument.Value.Type.Name == nameof(Type))
+                {
+                    attributeMeta.NamedArguments.Add($"{nArgument.Key} = typeof({nArgument.Value.Value})");
+                    continue;
+                }
+
+                 if (nArgument.Value.Value is string)
                 {
                     attributeMeta.NamedArguments.Add($"{nArgument.Key} = \"{nArgument.Value.Value}\"");
                 }
@@ -122,6 +134,12 @@ namespace Orleans.WebApi.Generator
                 if (objType is not INamedTypeSymbol objNamedType)
                 {
                     objNamedType = objType.ContainingType;
+                }
+
+                if (!objNamedType.IsGenericType && objNamedType.Name == "HttpResult")
+                {
+                    bodyType = objNamedType.BaseType.TypeArguments[0];
+                    return true;
                 }
 
                 if (objNamedType.IsGenericType && objNamedType.Name == "HttpResult")

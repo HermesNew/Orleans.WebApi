@@ -14,7 +14,7 @@ namespace Sample.Grains
             throw new NotImplementedException();
         }
 
-        public Task<HttpResult<User>> Get([FromQuery] int code)
+        public Task<HttpResult> Get([FromQuery] int code)
         {
             var user = new User
             {
@@ -27,7 +27,7 @@ namespace Sample.Grains
                 { "3","33"}
             }
             };
-            var result = new HttpResult<User>
+            var result = new HttpResult
             {
                 StatusCode = (HttpStatusCode)code,
                 Body = user

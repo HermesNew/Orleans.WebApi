@@ -219,7 +219,11 @@ public class MapToWebApiGenerator : ISourceGenerator
 
                                 if (method.IsHttpResult)
                                 {
-                                    sourcebuilder.Write($"[ProducesResponseType(typeof({method.Return}),200)]");
+                                    if (method.Return != nameof(Object))
+                                    {
+                                        sourcebuilder.Write($"[ProducesResponseType(typeof({method.Return}),200)]");
+                                    }
+
                                     sourcebuilder.Write($"public async Task<IActionResult> {method.Name}([FromRoute]{primaryKeyType} grainId");
                                 }
                                 else
@@ -320,17 +324,24 @@ public class MapToWebApiGenerator : ISourceGenerator
 
                                 if (method.IsHttpResult)
                                 {
-                                    sourcebuilder.Write("if (result.ResponseHeaders != default && result.ResponseHeaders.Count > 0)");
+                                    sourcebuilder.WriteLine("if (result == default)");
+                                    sourcebuilder.WriteOpeningBracket();
+                                    sourcebuilder.WriteLine("return StatusCode(200);");
+                                    sourcebuilder.WriteClosingBracket();
+                                    sourcebuilder.WriteLine();
+
+                                    sourcebuilder.WriteLine("if (result.ResponseHeaders != default && result.ResponseHeaders.Count > 0)");
 
                                     sourcebuilder.WriteOpeningBracket();
-                                    sourcebuilder.Write("foreach (var head in result.ResponseHeaders)");
+                                    sourcebuilder.WriteLine("foreach (var head in result.ResponseHeaders)");
 
                                     sourcebuilder.WriteOpeningBracket();
-                                    sourcebuilder.Write("this.Response.Headers[head.Key] = head.Value;");
+                                    sourcebuilder.WriteLine("this.Response.Headers[head.Key] = head.Value;");
                                     sourcebuilder.WriteClosingBracket();
 
                                     sourcebuilder.WriteClosingBracket();
 
+                                    sourcebuilder.WriteLine();
                                     sourcebuilder.Write("return StatusCode((int)result.StatusCode, result.Body);");
                                 }
 
