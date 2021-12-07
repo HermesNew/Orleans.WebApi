@@ -16,7 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Orleans.WebApi.Generator\Orleans.WebApi.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     <ProjectReference Include="..\Sample.IGrains\Sample.IGrains.csproj" />
-    <AdditionalFiles Include="$(OutDir)/*.xml" Visible="false" />
   </ItemGroup>
 
 
